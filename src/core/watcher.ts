@@ -13,6 +13,7 @@ import { log } from '../utils/logger.js'
 
 const AI_SESSION_DIR = join(homedir(), '.claude', 'projects')
 const CURSOR_SESSION_DIR = join(homedir(), '.cursor', 'projects')
+const CODEX_SESSION_DIR = join(homedir(), '.codex', 'sessions')
 
 export class SessionWatcher {
   private db: Database.Database
@@ -122,6 +123,19 @@ export class SessionWatcher {
     for (const line of raw.split('\n').filter(Boolean)) {
       try {
         const obj = JSON.parse(line)
+
+        // Codex CLI: type=response_item, role in payload
+        if (obj.type === 'response_item' && obj.payload?.role) {
+          const role = obj.payload.role
+          for (const block of (obj.payload.content ?? [])) {
+            const t = block.text ?? ''
+            if (!t) continue
+            if (role === 'assistant') texts.push(`AI: ${t}`)
+            else if (role === 'user') texts.push(`USER: ${t}`)
+          }
+          continue
+        }
+
         // Claude uses obj.type, Cursor uses obj.role
         if (obj.type === 'assistant' || obj.role === 'assistant') {
           for (const block of (obj.message?.content ?? [])) {
@@ -183,6 +197,9 @@ export class SessionWatcher {
         }
       } catch {}
     }
+
+    // Codex CLI: date-organized sessions, not project-specific
+    if (existsSync(CODEX_SESSION_DIR)) paths.push(CODEX_SESSION_DIR)
 
     return paths
   }

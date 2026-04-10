@@ -18,7 +18,7 @@ if (!process.argv.includes('prompt')) console.log()
 program
   .name('mnemo')
   .description(chalk.cyan('mnemo') + chalk.dim(' — persistent memory for AI coding tools'))
-  .version('0.3.0')
+  .version('0.3.1')
 
 program
   .command('init')
