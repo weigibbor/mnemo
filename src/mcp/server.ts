@@ -13,7 +13,7 @@ export async function startMcpServer(): Promise<void> {
   const { branch } = getGitContext()
 
   const server = new Server(
-    { name: 'mnemo', version: '0.2.5' },
+    { name: 'mnemo', version: '0.2.6' },
     { capabilities: { tools: {} } }
   )
 

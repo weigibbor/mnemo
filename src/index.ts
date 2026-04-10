@@ -7,6 +7,7 @@ import { statusCommand } from './commands/status.js'
 import { forgetCommand } from './commands/forget.js'
 import { initCommand } from './commands/init.js'
 import { promptCommand } from './commands/prompt.js'
+import { logsCommand } from './commands/logs.js'
 import { startMcpServer } from './mcp/server.js'
 
 const program = new Command()
@@ -47,6 +48,11 @@ program
   .command('prompt')
   .description('output shell prompt indicator (for PS1 integration)')
   .action(promptCommand)
+
+program
+  .command('logs')
+  .description('show recent mnemo log output')
+  .action(logsCommand)
 
 program
   .command('mcp')

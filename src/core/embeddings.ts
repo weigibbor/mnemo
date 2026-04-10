@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { log } from '../utils/logger.js'
 
 const client = new Anthropic()
 
@@ -25,7 +26,9 @@ export async function embed(text: string): Promise<number[]> {
     if (Array.isArray(parsed) && parsed.every((n) => typeof n === 'number')) {
       return parsed
     }
-  } catch {}
+  } catch (err) {
+    log('warn', `embedding parse failed, using fallback: ${err instanceof Error ? err.message : String(err)}`)
+  }
 
   return simpleBowVector(text)
 }

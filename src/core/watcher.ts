@@ -9,6 +9,7 @@ import { extractMemories } from './extractor.js'
 import { embed } from './embeddings.js'
 import { getGitContext, getProjectName } from './git.js'
 import { writePid, removePid } from '../utils/pid.js'
+import { log } from '../utils/logger.js'
 
 const AI_SESSION_DIR = join(homedir(), '.claude', 'projects')
 const CURSOR_LOG_DIR = join(homedir(), '.cursor', 'logs')
@@ -50,6 +51,9 @@ export class SessionWatcher {
     this.watcher.on('change', (p: string) => this.onFileChange(p))
     this.watcher.on('add', (p: string) => this.onFileChange(p))
 
+    log('info', `watcher started — project: ${this.project}, branch: ${this.branch}`)
+    log('info', `watching paths: ${paths.length ? paths.join(', ') : 'fallback: ' + join(process.cwd(), '**/*.jsonl')}`)
+
     writePid()
 
     // Safety net: flush every 5 minutes even during continuous activity
@@ -75,7 +79,9 @@ export class SessionWatcher {
     try {
       const text = this.parseFile(filePath)
       if (text) this.buffer.push(text)
-    } catch {}
+    } catch (err) {
+      log('warn', `parse failed for ${filePath}: ${err instanceof Error ? err.message : String(err)}`)
+    }
     this.scheduleFlush()
   }
 
@@ -87,6 +93,7 @@ export class SessionWatcher {
   async flush(): Promise<void> {
     if (!this.buffer.length) return
     const transcript = this.buffer.splice(0).join('\n')
+    log('info', `flushing ${transcript.length} chars of buffered content`)
 
     this.branch = getGitContext().branch
 
@@ -102,7 +109,7 @@ export class SessionWatcher {
 
       embed(`${memory.content} ${memory.reasoning ?? ''} ${memory.tags.join(' ')}`)
         .then((vec) => updateEmbedding(this.db, id, vec))
-        .catch(() => {})
+        .catch((err) => log('warn', `embed failed for memory ${id}: ${err instanceof Error ? err.message : String(err)}`))
 
       this.memoriesExtracted++
     }

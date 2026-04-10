@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { ExtractedMemory, MemoryType } from '../types.js'
+import { log } from '../utils/logger.js'
 
 const client = new Anthropic()
 
@@ -45,7 +46,10 @@ export async function extractMemories(
   project: string,
   _branch?: string | null
 ): Promise<ExtractedMemory[]> {
-  if (transcript.trim().length < 100) return []
+  if (transcript.trim().length < 100) {
+    log('info', `extract skipped — transcript too short (${transcript.trim().length} chars)`)
+    return []
+  }
 
   try {
     const response = await client.messages.create({
@@ -69,8 +73,11 @@ export async function extractMemories(
     const parsed = JSON.parse(text)
     if (!Array.isArray(parsed)) return []
 
-    return parsed.filter(isValidMemory)
-  } catch {
+    const valid = parsed.filter(isValidMemory)
+    log('info', `extracted ${valid.length} memories from ${transcript.length} char transcript`)
+    return valid
+  } catch (err) {
+    log('error', `extraction failed: ${err instanceof Error ? err.message : String(err)}`)
     return []
   }
 }
