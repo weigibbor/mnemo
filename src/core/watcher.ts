@@ -20,6 +20,7 @@ export class SessionWatcher {
   private watcher: ReturnType<typeof chokidar.watch> | null = null
   private buffer: string[] = []
   private flushTimer: NodeJS.Timeout | null = null
+  private maxFlushTimer: ReturnType<typeof setInterval> | null = null
   private memoriesExtracted = 0
   private branch: string | null = null
 
@@ -50,10 +51,14 @@ export class SessionWatcher {
     this.watcher.on('add', (p: string) => this.onFileChange(p))
 
     writePid()
+
+    // Safety net: flush every 5 minutes even during continuous activity
+    this.maxFlushTimer = setInterval(() => this.flush(), 5 * 60 * 1000)
   }
 
   async stop(): Promise<void> {
     if (this.flushTimer) clearTimeout(this.flushTimer)
+    if (this.maxFlushTimer) clearInterval(this.maxFlushTimer)
     await this.flush()
     if (this.watcher) await this.watcher.close()
     removePid()
