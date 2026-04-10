@@ -12,7 +12,7 @@ import { writePid, removePid } from '../utils/pid.js'
 import { log } from '../utils/logger.js'
 
 const AI_SESSION_DIR = join(homedir(), '.claude', 'projects')
-const CURSOR_LOG_DIR = join(homedir(), '.cursor', 'logs')
+const CURSOR_SESSION_DIR = join(homedir(), '.cursor', 'projects')
 
 export class SessionWatcher {
   private db: Database.Database
@@ -122,12 +122,13 @@ export class SessionWatcher {
     for (const line of raw.split('\n').filter(Boolean)) {
       try {
         const obj = JSON.parse(line)
-        if (obj.type === 'assistant') {
+        // Claude uses obj.type, Cursor uses obj.role
+        if (obj.type === 'assistant' || obj.role === 'assistant') {
           for (const block of (obj.message?.content ?? [])) {
             if (block.type === 'text') texts.push(`AI: ${block.text}`)
           }
         }
-        if (obj.type === 'user') {
+        if (obj.type === 'user' || obj.role === 'user') {
           const c = obj.message?.content
           const text = Array.isArray(c)
             ? c.filter((b: any) => b.type === 'text').map((b: any) => b.text).join(' ')
@@ -165,7 +166,24 @@ export class SessionWatcher {
       } catch {}
     }
 
-    if (existsSync(CURSOR_LOG_DIR)) paths.push(CURSOR_LOG_DIR)
+    // Cursor: same slug but NO leading dash, transcripts in agent-transcripts/
+    const cursorSlug = cwdSlug.replace(/^-/, '')
+    const cursorPath = join(CURSOR_SESSION_DIR, cursorSlug, 'agent-transcripts')
+    if (existsSync(cursorPath)) paths.push(cursorPath)
+
+    // Also check Cursor dirs that end with project name
+    if (existsSync(CURSOR_SESSION_DIR)) {
+      try {
+        for (const dir of readdirSync(CURSOR_SESSION_DIR)) {
+          if (dir === cursorSlug) continue
+          if (dir.endsWith(`-${this.project}`)) {
+            const transcripts = join(CURSOR_SESSION_DIR, dir, 'agent-transcripts')
+            if (existsSync(transcripts)) paths.push(transcripts)
+          }
+        }
+      } catch {}
+    }
+
     return paths
   }
 }

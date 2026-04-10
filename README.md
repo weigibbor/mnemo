@@ -26,7 +26,7 @@ Every AI session starts blank. Decisions, architecture choices, failed approache
 | Tool | Status |
 |------|--------|
 | **Claude Code** | Supported |
-| Cursor | Coming soon |
+| **Cursor** | Supported |
 | Windsurf | Coming soon |
 | Codex CLI | Coming soon |
 | Aider | Coming soon |
