@@ -99,7 +99,38 @@ mnemo recall <query>    # semantic search + AI-synthesized answer
 mnemo status            # memory stats for current project
 mnemo forget <id>       # delete a specific memory
 mnemo mcp               # start MCP server (used internally by AI tools)
+mnemo prompt            # shell prompt indicator (for PS1 integration)
 ```
+
+---
+
+## Status Awareness
+
+mnemo keeps you informed about its state — both in your terminal and inside your AI tools.
+
+### Shell prompt indicator
+
+Add this to your `~/.zshrc` or `~/.bashrc`:
+
+```bash
+export PS1='$(mnemo prompt)'$PS1
+```
+
+When the watcher is active, your prompt shows `[mnemo]`:
+
+```
+[mnemo] ~/my-project (main) $
+```
+
+### MCP status line
+
+Every time your AI tool loads context, mnemo reports its state:
+
+```
+[mnemo] watching | 42 memories | branch: main | last: 2m ago
+```
+
+Your AI knows whether mnemo is active, how many memories exist, and when the last capture happened.
 
 ---
 
@@ -116,7 +147,7 @@ After `mnemo init`, your AI tools automatically load memories at session start v
 
 | Tool | Description |
 |------|-------------|
-| `mnemo_context` | Load project memories at session start |
+| `mnemo_context` | Load project memories + status line at session start |
 | `mnemo_save` | Save a new decision, pattern, or reference |
 
 ---
