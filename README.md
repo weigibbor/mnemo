@@ -1,8 +1,14 @@
-# mnemo
+<p align="center">
+  <img src="assets/mnemo-logo-full.svg" alt="mnemo" height="48">
+</p>
 
-> Persistent memory for your AI coding tools. Never re-explain your project again.
+<p align="center">
+  Persistent memory for your AI coding tools. Never re-explain your project again.
+</p>
 
-**Zero-config. TypeScript-native. Dev-tool-specific. Auto-capture.**
+<p align="center">
+  <strong>Zero-config · TypeScript-native · Dev-tool-specific · Auto-capture</strong>
+</p>
 
 Every AI session starts blank. Decisions, architecture choices, failed approaches — gone when you close the terminal. **mnemo** watches your sessions, extracts what matters, and injects it back into any AI tool at session start.
 

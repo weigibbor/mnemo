@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <!-- OG / Social share image -->
+  <rect width="1200" height="630" fill="#0A0A0B"/>
+  
+  <!-- Noise texture subtle -->
+  <filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/></filter>
+  <rect width="1200" height="630" filter="url(#n)" opacity="0.02"/>
+  
+  <!-- Icon centered -->
+  <g transform="translate(600,260) scale(3.5)">
+    <path d="M-24,20 L-24,-12 L-14,-12 L-14,8 L-4,8 L-4,-20 L4,-20 L4,8 L14,8 L14,-12 L24,-12 L24,20" fill="none" stroke="#5DCAA5" stroke-width="2" stroke-linejoin="miter" stroke-linecap="square"/>
+    <circle cx="-24" cy="-12" r="2" fill="#5DCAA5" opacity="0.5"/>
+    <circle cx="24" cy="-12" r="2" fill="#5DCAA5" opacity="0.5"/>
+    <circle cx="-4" cy="-20" r="2.5" fill="#5DCAA5"/>
+    <circle cx="4" cy="-20" r="2.5" fill="#5DCAA5"/>
+  </g>
+  
+  <!-- Wordmark -->
+  <text x="600" y="460" text-anchor="middle" font-family="'DM Mono', monospace" font-size="52" font-weight="500" fill="#E8E6E0">mn<tspan fill="#5DCAA5">e</tspan>mo</text>
+  
+  <!-- Tagline -->
+  <text x="600" y="510" text-anchor="middle" font-family="'DM Mono', monospace" font-size="18" fill="#6B6B78">persistent memory for AI coding tools</text>
+</svg>
