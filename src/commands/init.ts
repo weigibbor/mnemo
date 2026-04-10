@@ -21,7 +21,7 @@ export async function initCommand(): Promise<void> {
 
   config.mcpServers.mnemo = {
     command: 'npx',
-    args: ['-y', 'mnemo', 'mcp'],
+    args: ['-y', 'mnemo-ai', 'mcp'],
   }
 
   writeFileSync(configFile, JSON.stringify(config, null, 2) + '\n')

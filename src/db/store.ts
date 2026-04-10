@@ -48,6 +48,7 @@ function initSchema(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_memories_branch     ON memories(project, branch);
     CREATE INDEX IF NOT EXISTS idx_memories_type       ON memories(type);
     CREATE INDEX IF NOT EXISTS idx_memories_importance ON memories(importance DESC);
+    CREATE INDEX IF NOT EXISTS idx_memories_session_id ON memories(session_id);
 
     CREATE VIRTUAL TABLE IF NOT EXISTS memories_fts USING fts5(
       content, reasoning, tags,
@@ -107,10 +108,10 @@ export function searchMemories(
     rows = db.prepare(`
       SELECT m.* FROM memories m
       JOIN memories_fts fts ON m.id = fts.rowid
-      WHERE memories_fts MATCH ? AND m.project = ?
+      WHERE memories_fts MATCH ? AND m.project = ? ${branch ? 'AND m.branch = ?' : ''}
       ORDER BY m.importance DESC, m.created_at DESC
       LIMIT 40
-    `).all(sanitizeFts(query), project)
+    `).all(...[sanitizeFts(query), project, ...(branch ? [branch] : [])])
   } catch {
     rows = []
   }
