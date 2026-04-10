@@ -17,11 +17,13 @@ export async function embed(text: string): Promise<number[]> {
   })
 
   try {
-    const raw = response.content
+    let raw = response.content
       .filter((b) => b.type === 'text')
       .map((b) => (b as any).text)
       .join('')
       .trim()
+    // Strip markdown code fences if model wraps JSON in ```json ... ```
+    raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '')
     const parsed = JSON.parse(raw)
     if (Array.isArray(parsed) && parsed.every((n) => typeof n === 'number')) {
       return parsed

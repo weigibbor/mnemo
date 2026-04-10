@@ -12,12 +12,13 @@ import { startMcpServer } from './mcp/server.js'
 
 const program = new Command()
 
-console.log()
+// Skip decorative newline for prompt command (breaks PS1)
+if (!process.argv.includes('prompt')) console.log()
 
 program
   .name('mnemo')
   .description(chalk.cyan('mnemo') + chalk.dim(' — persistent memory for AI coding tools'))
-  .version('0.2.8')
+  .version('0.2.9')
 
 program
   .command('init')

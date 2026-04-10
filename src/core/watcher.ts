@@ -44,7 +44,7 @@ export class SessionWatcher {
     const paths = this.resolvePaths()
 
     this.watcher = chokidar.watch(
-      paths.length ? paths : [join(process.cwd(), '**/*.jsonl')],
+      paths.length ? paths : [process.cwd()],
       { persistent: true, ignoreInitial: true, usePolling: false }
     )
 
@@ -145,10 +145,13 @@ export class SessionWatcher {
   private resolvePaths(): string[] {
     const paths: string[] = []
 
+    // Watch DIRECTORIES, not globs — chokidar globs fail silently on macOS
+    // onFileChange() already filters for .jsonl/.log extensions
+
     // Claude replaces all non-alphanumeric chars with -: /Users/me/Orva_MVP → -Users-me-Orva-MVP
     const cwdSlug = process.cwd().replace(/[^a-zA-Z0-9]/g, '-')
     const cwdPath = join(AI_SESSION_DIR, cwdSlug)
-    if (existsSync(cwdPath)) paths.push(join(cwdPath, '**/*.jsonl'))
+    if (existsSync(cwdPath)) paths.push(cwdPath)
 
     // Also check all project dirs that end with the project name
     if (existsSync(AI_SESSION_DIR)) {
@@ -156,13 +159,13 @@ export class SessionWatcher {
         for (const dir of readdirSync(AI_SESSION_DIR)) {
           if (dir === cwdSlug) continue
           if (dir.endsWith(`-${this.project}`)) {
-            paths.push(join(AI_SESSION_DIR, dir, '**/*.jsonl'))
+            paths.push(join(AI_SESSION_DIR, dir))
           }
         }
       } catch {}
     }
 
-    if (existsSync(CURSOR_LOG_DIR)) paths.push(join(CURSOR_LOG_DIR, '**/*.log'))
+    if (existsSync(CURSOR_LOG_DIR)) paths.push(CURSOR_LOG_DIR)
     return paths
   }
 }

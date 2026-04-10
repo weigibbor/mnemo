@@ -64,11 +64,14 @@ export async function extractMemories(
       ],
     })
 
-    const text = response.content
+    let text = response.content
       .filter((b) => b.type === 'text')
       .map((b) => (b as any).text)
       .join('')
       .trim()
+
+    // Strip markdown code fences if the model wraps JSON in ```json ... ```
+    text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '')
 
     const parsed = JSON.parse(text)
     if (!Array.isArray(parsed)) return []
