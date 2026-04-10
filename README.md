@@ -65,7 +65,7 @@ mnemo status
 
 ## How it works
 
-mnemo runs a background daemon that watches your AI coding session files. After each session, mnemo extracts structured memories:
+mnemo runs a background daemon that watches your AI coding session files. It captures memories on two triggers: **30 seconds of inactivity** (between pauses) and a **5-minute safety net** (during long continuous sessions). Extracted memories include:
 
 | Type | What it captures |
 |------|-----------------|
@@ -82,6 +82,7 @@ Memories are stored locally in `~/.mnemo/memories.db` — your data never leaves
 ```
 AI session files (.jsonl)
   → mnemo watches for changes (chokidar)
+  → flushes on 30s inactivity OR every 5 minutes
   → extracts decisions, patterns, references (AI-powered)
   → stores in local SQLite with FTS5 + semantic embeddings
   → next session: MCP injects memories automatically
