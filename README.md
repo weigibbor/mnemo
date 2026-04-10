@@ -10,7 +10,7 @@
   <strong>Zero-config · TypeScript-native · Dev-tool-specific · Auto-capture</strong>
 </p>
 
-Every AI session starts blank. Decisions, architecture choices, failed approaches — gone when you close the terminal. **mnemo** watches your sessions, extracts what matters, and injects it back into any AI tool at session start.
+Every AI session starts blank. Decisions, architecture choices, failed approaches — gone when you close the terminal. **mnemo** watches your sessions, extracts what matters, and injects it back into Claude Code at session start. More tools coming soon.
 
 ### Why mnemo?
 
@@ -18,6 +18,20 @@ Every AI session starts blank. Decisions, architecture choices, failed approache
 - **TypeScript-native** — built in TypeScript, for TypeScript developers. First-class MCP support.
 - **Dev-tool-specific** — purpose-built for AI coding workflows. Not a generic note-taking app.
 - **Auto-capture** — memories are extracted automatically from your sessions. You don't write anything manually.
+
+---
+
+## Supported tools
+
+| Tool | Status |
+|------|--------|
+| **Claude Code** | Supported |
+| Cursor | Coming soon |
+| Windsurf | Coming soon |
+| Codex CLI | Coming soon |
+| Aider | Coming soon |
+| Continue | Coming soon |
+| Cline / Roo Code | Coming soon |
 
 ---
 
@@ -137,7 +151,7 @@ Your AI knows whether mnemo is active, how many memories exist, and when the las
 
 ## MCP Integration
 
-After `mnemo init`, your AI tools automatically load memories at session start via [MCP](https://modelcontextprotocol.io/). Your AI arrives knowing:
+After `mnemo init`, Claude Code automatically loads memories at session start via [MCP](https://modelcontextprotocol.io/). Your AI arrives knowing:
 
 - Key architectural decisions
 - What's been tried and failed
