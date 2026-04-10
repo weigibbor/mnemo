@@ -18,7 +18,12 @@
     "cli",
     "developer-tools"
   ],
-  "author": "GE Labs LLC <hi@gelabs.dev>",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "author": "GE Labs LLC <hi@mnemo.sh>",
   "license": "MIT",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
