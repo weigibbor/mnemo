@@ -145,8 +145,8 @@ export class SessionWatcher {
   private resolvePaths(): string[] {
     const paths: string[] = []
 
-    // Claude uses cwd path as directory name: /Users/me/project → -Users-me-project
-    const cwdSlug = process.cwd().replace(/\//g, '-')
+    // Claude replaces all non-alphanumeric chars with -: /Users/me/Orva_MVP → -Users-me-Orva-MVP
+    const cwdSlug = process.cwd().replace(/[^a-zA-Z0-9]/g, '-')
     const cwdPath = join(AI_SESSION_DIR, cwdSlug)
     if (existsSync(cwdPath)) paths.push(join(cwdPath, '**/*.jsonl'))
 
