@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>mnemo — persistent memory for AI coding tools</title>
+<meta name="description" content="Your AI coding tools finally have a memory. Never re-explain your project again.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #050506;
+    --surface:  #0C0C0F;
+    --surface2: #111116;
+    --border:   #1A1A22;
+    --border2:  #25252F;
+    --text:     #EEEEF0;
+    --text2:    #C8C8D0;
+    --muted:    #6E6E80;
+    --dim:      #3A3A48;
+    --accent:   #5EEAA0;
+    --accent2:  #3DDC84;
+    --accent-dim: rgba(94,234,160,0.08);
+    --accent-glow: rgba(94,234,160,0.15);
+    --red:      #F06060;
+    --amber:    #F0A050;
+    --blue:     #60A0F0;
+    --purple:   #A080F0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Grid background ── */
+  .grid-bg {
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(94,234,160,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(94,234,160,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 100%);
+  }
+
+  /* ── Glow orb ── */
+  .glow {
+    position: fixed;
+    top: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 900px;
+    height: 500px;
+    background: radial-gradient(ellipse, rgba(94,234,160,0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Nav ── */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2.5rem;
+    height: 56px;
+    background: rgba(5,5,6,0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--accent); }
+
+  .nav-links { display: flex; gap: 2rem; align-items: center; }
+
+  nav a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 400;
+    transition: color 0.2s;
+  }
+  nav a:hover { color: var(--text); }
+
+  .btn-nav {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    padding: 6px 18px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+  .btn-nav:hover { opacity: 0.9; transform: translateY(-1px); color: var(--bg); }
+
+  /* ── Hero ── */
+  .hero {
+    position: relative;
+    z-index: 1;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 5rem 2.5rem 4rem;
+    text-align: center;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(94,234,160,0.12);
+    border-radius: 100px;
+    padding: 5px 16px 5px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+    margin-bottom: 2.5rem;
+  }
+
+  .hero-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s ease infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .hero h1 {
+    font-size: clamp(48px, 7vw, 88px);
+    font-weight: 700;
+    line-height: 1.0;
+    letter-spacing: -0.04em;
+    color: var(--text);
+    margin-bottom: 1.5rem;
+  }
+
+  .hero h1 .em {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 50%, var(--blue) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-sub {
+    font-size: 17px;
+    color: var(--muted);
+    max-width: 560px;
+    margin: 0 auto 2.5rem;
+    line-height: 1.7;
+    font-weight: 400;
+  }
+
+  .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 0 20px rgba(94,234,160,0.15);
+  }
+  .btn-primary:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 0 30px rgba(94,234,160,0.25); }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: color 0.2s, border-color 0.2s, transform 0.2s;
+  }
+  .btn-secondary:hover { color: var(--text); border-color: var(--dim); transform: translateY(-2px); }
+
+  /* ── Hero pills ── */
+  .hero-pills {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+  }
+
+  .pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid rgba(94,234,160,0.12);
+    padding: 4px 12px;
+    border-radius: 100px;
+    letter-spacing: 0.02em;
+  }
+
+  /* ── Selling points ── */
+  .selling-wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 2.5rem 4rem;
+  }
+
+  .selling-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .sell-card {
+    background: var(--surface);
+    padding: 1.75rem 1.5rem;
+    transition: background 0.2s;
+  }
+
+  .sell-icon {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+    line-height: 1;
+  }
+
+  .sell-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }
+
+  .sell-desc {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .sell-desc code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    background: rgba(94,234,160,0.08);
+    color: var(--accent);
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+
+  /* ── Terminal ── */
+  .terminal-wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 0 2.5rem 6rem;
+  }
+
+  .terminal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.03) inset;
+  }
+
+  .term-bar {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 12px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .term-dot { width: 11px; height: 11px; border-radius: 50%; }
+  .term-dot.r { background: #FF5F57; }
+  .term-dot.y { background: #FEBC2E; }
+  .term-dot.g { background: #28C840; }
+  .term-title { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); margin-left: 10px; }
+
+  .term-body {
+    padding: 1.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 2;
+  }
+
+  .t-prompt { color: var(--muted); }
+  .t-cmd    { color: var(--accent); }
+  .t-dim    { color: var(--dim); }
+  .t-key    { color: var(--amber); }
+  .t-val    { color: var(--text2); }
+  .t-ref    { color: var(--amber); }
+  .t-blank  { display: block; height: 0.4rem; }
+  .t-cursor {
+    display: inline-block;
+    width: 8px; height: 15px;
+    background: var(--accent);
+    vertical-align: middle;
+    animation: blink 1.1s step-end infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ── Sections ── */
+  .section {
+    position: relative;
+    z-index: 1;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 6rem 2.5rem;
+  }
+
+  .section-header {
+    text-align: center;
+    margin-bottom: 3.5rem;
+  }
+
+  .section-tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+
+  .section-title {
+    font-size: clamp(28px, 4vw, 40px);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--text);
+    line-height: 1.15;
+  }
+
+  .section-divider {
+    max-width: 1000px;
+    margin: 0 auto;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border2), transparent);
+  }
+
+  /* ── Memory types ── */
+  .types-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .type-card {
+    background: var(--surface);
+    padding: 1.5rem;
+    transition: background 0.2s;
+  }
+  .type-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.02em;
+  }
+
+  .type-desc { font-size: 13px; color: var(--muted); line-height: 1.65; }
+
+  /* ── Steps ── */
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .step {
+    background: var(--surface);
+    padding: 2rem 1.5rem;
+    transition: background 0.2s;
+  }
+  .step-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--border2);
+    margin-bottom: 1rem;
+    line-height: 1;
+  }
+
+  .step-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+
+  .step-body { font-size: 13px; color: var(--muted); line-height: 1.65; }
+
+  /* ── Install strip ── */
+  .install-strip {
+    position: relative;
+    z-index: 1;
+    max-width: 1000px;
+    margin: 0 auto 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .install-cmd {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .install-sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+  /* ── Pricing ── */
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+  }
+
+  .plan {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+    transition: border-color 0.3s, transform 0.3s;
+  }
+  .plan.featured { border-color: var(--accent); box-shadow: 0 0 30px rgba(94,234,160,0.06); }
+  .plan.featured:hover { box-shadow: 0 0 40px rgba(94,234,160,0.1); }
+
+  .plan-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.75rem;
+  }
+
+  .plan-price {
+    font-size: 42px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .plan-price span { font-size: 14px; font-weight: 400; color: var(--muted); }
+
+  .plan-sub { font-size: 13px; color: var(--dim); margin-bottom: 1.5rem; }
+  .plan-divider { height: 1px; background: var(--border); margin-bottom: 1.25rem; }
+
+  .plan-feat { font-size: 13px; color: var(--muted); line-height: 2.2; list-style: none; }
+  .plan-feat li { padding-left: 1.25rem; position: relative; }
+  .plan-feat li::before { content: ''; position: absolute; left: 0; top: 11px; width: 6px; height: 6px; border-radius: 50%; background: var(--dim); }
+  .plan-feat li.on::before { background: var(--accent); box-shadow: 0 0 6px rgba(94,234,160,0.4); }
+
+  /* ── Footer ── */
+  footer {
+    position: relative;
+    z-index: 1;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  footer .logo { font-size: 14px; }
+  .footer-links { display: flex; gap: 1.5rem; }
+  .footer-links a { color: var(--muted); text-decoration: none; font-size: 13px; transition: color 0.2s; }
+  .footer-links a:hover { color: var(--text); }
+  .footer-muted { font-size: 12px; color: var(--dim); }
+
+  /* ── Animations ── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .fade-in {
+    opacity: 0;
+    animation: fadeIn 0.8s ease forwards;
+  }
+  .fade-in:nth-child(2) { animation-delay: 0.1s; }
+  .fade-in:nth-child(3) { animation-delay: 0.2s; }
+  .fade-in:nth-child(4) { animation-delay: 0.3s; }
+
+  @keyframes fadeIn {
+    to { opacity: 1; }
+  }
+
+  /* ── Touch-friendly ── */
+  a, button, .btn-primary, .btn-secondary, .btn-nav {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Hover effects only on mouse devices */
+  @media (hover: hover) {
+    .plan:hover { transform: translateY(-4px); }
+    .type-card:hover { background: var(--surface2); }
+    .step:hover { background: var(--surface2); }
+  }
+
+  /* ── Tablet (768px) ── */
+  @media (max-width: 768px) {
+    .hero { padding: 4rem 2rem 3rem; }
+    .hero h1 { font-size: clamp(36px, 6vw, 56px); }
+    .hero-sub { font-size: 15px; }
+    .section { padding: 4rem 2rem; }
+    .selling-grid { grid-template-columns: repeat(2, 1fr); }
+    .selling-wrap { padding: 0 2rem 3rem; }
+    .types-grid { grid-template-columns: repeat(2, 1fr); }
+    .steps { grid-template-columns: repeat(2, 1fr); }
+    .pricing-grid { grid-template-columns: 1fr; gap: 12px; }
+    .plan { padding: 1.75rem; }
+    .section-title { font-size: clamp(24px, 4vw, 32px); }
+    .terminal-wrap { padding: 0 2rem 4rem; }
+    .install-strip { padding: 1.5rem 2rem; }
+    footer { padding: 2rem; }
+  }
+
+  /* ── Mobile (640px) ── */
+  @media (max-width: 640px) {
+    nav { padding: 0 1rem; height: 50px; }
+    .logo { font-size: 15px; }
+    .nav-links .hide-sm { display: none; }
+    .nav-links { gap: 0; }
+    .btn-nav { padding: 6px 14px; font-size: 12px; }
+
+    .hero {
+      padding: 2.5rem 1.25rem 2rem;
+      text-align: center;
+    }
+    .hero h1 { font-size: 32px; letter-spacing: -0.03em; }
+    .hero-badge { font-size: 11px; padding: 4px 12px 4px 10px; margin-bottom: 1.5rem; }
+    .hero-sub { font-size: 14px; margin-bottom: 2rem; }
+    .hero-actions {
+      flex-direction: column;
+      width: 100%;
+    }
+    .hero-actions .btn-primary,
+    .hero-actions .btn-secondary {
+      width: 100%;
+      justify-content: center;
+      padding: 14px 24px;
+    }
+
+    .terminal-wrap { padding: 0 1.25rem 3rem; }
+    .term-body {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      font-size: 11.5px;
+      padding: 1rem;
+      line-height: 1.9;
+    }
+    .term-bar { padding: 10px 12px; }
+    .term-dot { width: 9px; height: 9px; }
+
+    .section { padding: 3rem 1.25rem; }
+    .section-header { margin-bottom: 2rem; }
+    .section-title { font-size: 24px; }
+    .section-tag { font-size: 10px; }
+
+    .selling-grid { grid-template-columns: 1fr; }
+    .selling-wrap { padding: 0 1.25rem 2.5rem; }
+    .hero-pills { gap: 6px; }
+    .pill { font-size: 10px; padding: 3px 10px; }
+    .types-grid { grid-template-columns: 1fr; }
+    .type-card { padding: 1.25rem; }
+
+    .steps { grid-template-columns: 1fr; }
+    .step { padding: 1.5rem 1.25rem; }
+    .step-num { font-size: 24px; }
+
+    .install-strip {
+      margin: 0 1.25rem;
+      padding: 1.5rem;
+      flex-direction: column;
+      text-align: center;
+      align-items: stretch;
+    }
+    .install-cmd { font-size: 14px; }
+    .install-strip .btn-secondary {
+      width: 100%;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    .pricing-grid { grid-template-columns: 1fr; }
+    .plan { padding: 1.5rem; }
+    .plan-price { font-size: 36px; }
+    .plan:hover { transform: none; }
+
+    footer {
+      padding: 2rem 1.25rem;
+      flex-direction: column;
+      text-align: center;
+      gap: 1.25rem;
+    }
+    .footer-links { justify-content: center; gap: 1.25rem; }
+
+    .section-divider { margin: 0 1.25rem; }
+
+    /* Reduce glow on mobile for perf */
+    .glow { width: 500px; height: 300px; }
+  }
+
+  /* ── Small phone (380px) ── */
+  @media (max-width: 380px) {
+    .hero { padding: 2rem 1rem 1.5rem; }
+    .hero h1 { font-size: 28px; }
+    .hero-sub { font-size: 13px; }
+    .section { padding: 2.5rem 1rem; }
+    .terminal-wrap { padding: 0 1rem 2.5rem; }
+    .term-body { font-size: 10.5px; padding: 0.75rem; }
+    .install-strip { margin: 0 1rem; padding: 1.25rem; }
+    .install-cmd { font-size: 13px; }
+    footer { padding: 1.5rem 1rem; }
+    .section-divider { margin: 0 1rem; }
+  }
+
+  /* ── Safe areas for notched phones ── */
+  @supports (padding: env(safe-area-inset-bottom)) {
+    nav { padding-left: max(1rem, env(safe-area-inset-left)); padding-right: max(1rem, env(safe-area-inset-right)); }
+    footer { padding-bottom: max(2rem, env(safe-area-inset-bottom)); }
+  }
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+<div class="glow"></div>
+
+<!-- Nav -->
+<nav>
+  <div class="logo">mn<span>e</span>mo</div>
+  <div class="nav-links">
+    <a href="#how" class="hide-sm">how it works</a>
+    <a href="#pricing" class="hide-sm">pricing</a>
+    <a href="https://github.com/weigibbor/mnemo" class="hide-sm">github</a>
+    <a href="#install" class="btn-nav">get started</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-badge fade-in">v0.2.0 — MCP + semantic search</div>
+  <h1 class="fade-in">Your AI tools<br><span class="em">finally have</span> a memory.</h1>
+  <p class="hero-sub fade-in">
+    Every AI coding session starts blank. Decisions, dead ends, architecture choices — gone.
+    mnemo watches your sessions, extracts what matters, and injects it back. Automatically.
+  </p>
+  <div class="hero-pills fade-in">
+    <span class="pill">zero-config</span>
+    <span class="pill">TypeScript-native</span>
+    <span class="pill">dev-tool-specific</span>
+    <span class="pill">auto-capture</span>
+  </div>
+  <div class="hero-actions fade-in">
+    <a href="#install" class="btn-primary">npx mnemo-ai init</a>
+    <a href="https://github.com/weigibbor/mnemo" class="btn-secondary">view on github &rarr;</a>
+  </div>
+</section>
+
+<!-- Selling points -->
+<div class="selling-wrap reveal">
+  <div class="selling-grid">
+    <div class="sell-card">
+      <div class="sell-icon">0</div>
+      <div class="sell-title">Zero-config</div>
+      <div class="sell-desc">One command and you're done. No YAML, no dashboard, no setup wizard. <code>npx mnemo-ai init</code> — that's it.</div>
+    </div>
+    <div class="sell-card">
+      <div class="sell-icon">TS</div>
+      <div class="sell-title">TypeScript-native</div>
+      <div class="sell-desc">Built in TypeScript, for TypeScript developers. First-class MCP support. Runs anywhere Node runs.</div>
+    </div>
+    <div class="sell-card">
+      <div class="sell-icon">&lt;/&gt;</div>
+      <div class="sell-title">Dev-tool-specific</div>
+      <div class="sell-desc">Purpose-built for AI coding workflows. Not a generic note-taking app. Understands decisions, patterns, and code references.</div>
+    </div>
+    <div class="sell-card">
+      <div class="sell-icon">&circlearrowright;</div>
+      <div class="sell-title">Auto-capture</div>
+      <div class="sell-desc">Memories are extracted automatically from your sessions. You don't write anything manually. Just code — mnemo remembers.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Terminal -->
+<div class="terminal-wrap reveal">
+  <div class="terminal">
+    <div class="term-bar">
+      <div class="term-dot r"></div>
+      <div class="term-dot y"></div>
+      <div class="term-dot g"></div>
+      <span class="term-title">~/projects/api-service</span>
+    </div>
+    <div class="term-body">
+      <div><span class="t-prompt">$ </span><span class="t-cmd">mnemo recall "how did we handle auth?"</span></div>
+      <span class="t-blank"></span>
+      <div class="t-dim">  searching: "how did we handle auth?"...</div>
+      <div class="t-dim">  synthesizing from 4 memories...</div>
+      <span class="t-blank"></span>
+      <div><span class="t-key">  mnemo recall</span><span class="t-dim"> — "how did we handle auth?"</span></div>
+      <span class="t-blank"></span>
+      <div class="t-val">  Auth lives in <span class="t-ref">/lib/auth.ts</span> [4]. You chose JWT over sessions [1]</div>
+      <div class="t-val">  because the API needs to be stateless for horizontal scaling.</div>
+      <div class="t-val">  Refresh tokens are stored in Redis — you tried httpOnly cookies</div>
+      <div class="t-val">  first [2] but abandoned it due to CORS issues with the mobile</div>
+      <div class="t-val">  client. Access tokens expire in 15 min [3].</div>
+      <span class="t-blank"></span>
+      <div class="t-dim">  4 memories &middot; project: api-service &middot; branch: main</div>
+      <span class="t-blank"></span>
+      <div><span class="t-prompt">$ </span><span class="t-cursor"></span></div>
+    </div>
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- What mnemo captures -->
+<section class="section reveal" id="how">
+  <div class="section-header">
+    <div class="section-tag">what mnemo captures</div>
+    <div class="section-title">Five memory types.<br>Zero noise.</div>
+  </div>
+  <div class="types-grid">
+    <div class="type-card">
+      <div class="type-badge" style="background:rgba(94,234,160,0.1);color:#5EEAA0;">decision</div>
+      <div class="type-desc">Architecture and implementation choices — what you picked and why.</div>
+    </div>
+    <div class="type-card">
+      <div class="type-badge" style="background:rgba(240,96,96,0.1);color:#F06060;">rejection</div>
+      <div class="type-desc">Approaches tried and abandoned. Prevents repeating past mistakes.</div>
+    </div>
+    <div class="type-card">
+      <div class="type-badge" style="background:rgba(96,160,240,0.1);color:#60A0F0;">pattern</div>
+      <div class="type-desc">Recurring conventions specific to your codebase.</div>
+    </div>
+    <div class="type-card">
+      <div class="type-badge" style="background:rgba(240,160,80,0.1);color:#F0A050;">reference</div>
+      <div class="type-desc">Where things live. Stops the AI from searching wrong places.</div>
+    </div>
+    <div class="type-card">
+      <div class="type-badge" style="background:rgba(160,128,240,0.1);color:#A080F0;">error</div>
+      <div class="type-desc">Error patterns and their root cause fixes.</div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- How it works -->
+<section class="section reveal">
+  <div class="section-header">
+    <div class="section-tag">how it works</div>
+    <div class="section-title">Four steps. Fully automatic.</div>
+  </div>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-title">mnemo init</div>
+      <div class="step-body">Sets up the MCP server in your AI tool config. One command, done.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <div class="step-title">mnemo watch</div>
+      <div class="step-body">Background daemon watches your AI coding session files in real time.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <div class="step-title">auto-extract</div>
+      <div class="step-body">mnemo reads the transcript and extracts decisions, patterns, and references into SQLite.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">04</div>
+      <div class="step-title">inject on start</div>
+      <div class="step-body">Next session, MCP injects the right memories. Your AI arrives already knowing your project.</div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Install -->
+<section class="section reveal" id="install">
+  <div class="install-strip">
+    <div>
+      <div class="install-cmd">$ npm install -g mnemo</div>
+      <div class="install-sub">requires Node 20+ &middot; MNEMO_API_KEY</div>
+    </div>
+    <a href="https://github.com/weigibbor/mnemo" class="btn-secondary">read the docs &rarr;</a>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Pricing -->
+<section class="section reveal" id="pricing">
+  <div class="section-header">
+    <div class="section-tag">pricing</div>
+    <div class="section-title">Start free. Scale when ready.</div>
+  </div>
+  <div class="pricing-grid">
+    <div class="plan">
+      <div class="plan-name">Solo</div>
+      <div class="plan-price">Free</div>
+      <div class="plan-sub">forever, no card required</div>
+      <div class="plan-divider"></div>
+      <ul class="plan-feat">
+        <li class="on">unlimited local memory</li>
+        <li class="on">MCP &mdash; works with any AI tool</li>
+        <li class="on">all CLI commands</li>
+        <li class="on">FTS5 + semantic search</li>
+        <li class="on">git branch-aware scoping</li>
+        <li>cloud sync</li>
+        <li>team memory vault</li>
+      </ul>
+    </div>
+    <div class="plan featured">
+      <div class="plan-name">Pro</div>
+      <div class="plan-price">$9 <span>/ dev / mo</span></div>
+      <div class="plan-sub">billed monthly, cancel anytime</div>
+      <div class="plan-divider"></div>
+      <ul class="plan-feat">
+        <li class="on">everything in Solo</li>
+        <li class="on">cloud sync across machines</li>
+        <li class="on">team memory vault (per repo)</li>
+        <li class="on">memory REST API</li>
+        <li class="on">priority extraction model</li>
+        <li class="on">memory analytics dashboard</li>
+      </ul>
+    </div>
+    <div class="plan">
+      <div class="plan-name">Team</div>
+      <div class="plan-price">$29 <span>/ 5 devs / mo</span></div>
+      <div class="plan-sub">shared vault, admin controls</div>
+      <div class="plan-divider"></div>
+      <ul class="plan-feat">
+        <li class="on">everything in Pro</li>
+        <li class="on">shared project memory vault</li>
+        <li class="on">admin: who wrote what</li>
+        <li class="on">GitHub / GitLab org integration</li>
+        <li class="on">Slack alerts on new captures</li>
+        <li class="on">priority support</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div>
+    <div class="logo">mn<span>e</span>mo</div>
+    <div class="footer-muted" style="margin-top:4px;">by GE Labs LLC</div>
+  </div>
+  <div class="footer-links">
+    <a href="https://github.com/weigibbor/mnemo">github</a>
+    <a href="https://github.com/weigibbor/mnemo/issues">issues</a>
+    <a href="mailto:hi@gelabs.dev">hi@gelabs.dev</a>
+  </div>
+</footer>
+
+<script>
+// Scroll reveal
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

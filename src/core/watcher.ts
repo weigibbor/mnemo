@@ -1,7 +1,7 @@
 import chokidar from 'chokidar'
 import { join } from 'path'
 import { homedir } from 'os'
-import { readFileSync, existsSync } from 'fs'
+import { readFileSync, existsSync, readdirSync } from 'fs'
 import { randomUUID } from 'crypto'
 import type Database from 'better-sqlite3'
 import { createSession, endSession, saveMemory, updateEmbedding } from '../db/store.js'
@@ -132,9 +132,24 @@ export class SessionWatcher {
 
   private resolvePaths(): string[] {
     const paths: string[] = []
-    const slug = this.project.replace(/[^a-z0-9]/gi, '-').toLowerCase()
-    const aiPath = join(AI_SESSION_DIR, slug)
-    if (existsSync(aiPath)) paths.push(join(aiPath, '**/*.jsonl'))
+
+    // Claude uses cwd path as directory name: /Users/me/project → -Users-me-project
+    const cwdSlug = process.cwd().replace(/\//g, '-')
+    const cwdPath = join(AI_SESSION_DIR, cwdSlug)
+    if (existsSync(cwdPath)) paths.push(join(cwdPath, '**/*.jsonl'))
+
+    // Also check all project dirs that end with the project name
+    if (existsSync(AI_SESSION_DIR)) {
+      try {
+        for (const dir of readdirSync(AI_SESSION_DIR)) {
+          if (dir === cwdSlug) continue
+          if (dir.endsWith(`-${this.project}`)) {
+            paths.push(join(AI_SESSION_DIR, dir, '**/*.jsonl'))
+          }
+        }
+      } catch {}
+    }
+
     if (existsSync(CURSOR_LOG_DIR)) paths.push(join(CURSOR_LOG_DIR, '**/*.log'))
     return paths
   }
