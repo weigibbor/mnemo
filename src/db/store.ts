@@ -182,7 +182,7 @@ export function createSession(
 
 export function endSession(db: Database.Database, sessionId: string, count: number): void {
   db.prepare(
-    'UPDATE sessions SET ended_at = datetime("now"), memories_extracted = ? WHERE id = ?'
+    "UPDATE sessions SET ended_at = datetime('now'), memories_extracted = ? WHERE id = ?"
   ).run(count, sessionId)
 }
 
