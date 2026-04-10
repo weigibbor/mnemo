@@ -34,4 +34,11 @@ export async function initCommand(): Promise<void> {
   console.log(chalk.dim('    2. Use your AI coding tool — mnemo will watch and extract'))
   console.log(chalk.dim('    3. ') + chalk.white('mnemo recall') + chalk.dim(' — query your memories'))
   console.log()
+  console.log(chalk.dim('  Shell prompt indicator (optional):'))
+  console.log(chalk.dim('    Add this to your ~/.zshrc or ~/.bashrc:'))
+  console.log()
+  console.log(chalk.white("    export PS1='$(mnemo prompt)'$PS1"))
+  console.log()
+  console.log(chalk.dim('    Shows [mnemo] in your prompt when the watcher is active.'))
+  console.log()
 }

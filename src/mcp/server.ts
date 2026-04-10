@@ -1,9 +1,10 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js'
-import { getDb, getRecentMemories, searchMemories, saveMemory } from '../db/store.js'
+import { getDb, getRecentMemories, searchMemories, saveMemory, getStats } from '../db/store.js'
 import { embed } from '../core/embeddings.js'
 import { getGitContext, getProjectName } from '../core/git.js'
+import { isWatcherRunning } from '../utils/pid.js'
 import { randomUUID } from 'crypto'
 
 export async function startMcpServer(): Promise<void> {
@@ -12,7 +13,7 @@ export async function startMcpServer(): Promise<void> {
   const { branch } = getGitContext()
 
   const server = new Server(
-    { name: 'mnemo', version: '0.2.1' },
+    { name: 'mnemo', version: '0.2.2' },
     { capabilities: { tools: {} } }
   )
 
@@ -79,7 +80,16 @@ export async function startMcpServer(): Promise<void> {
         }
       }
 
+      const watcher = isWatcherRunning()
+      const stats = getStats(db, project)
+      const lastAgo = stats.lastCaptured
+        ? timeAgo(new Date(stats.lastCaptured))
+        : 'never'
+
+      const statusLine = `[mnemo] ${watcher.running ? 'watching' : 'inactive'} | ${stats.total} memories | branch: ${branch ?? 'unknown'} | last: ${lastAgo}`
+
       const formatted = [
+        statusLine + '\n',
         `mnemo context: ${project}${branch ? ` (${branch})` : ''} — ${memories.length} memories\n`,
         ...memories.map((m) => {
           const lines = [`[${m.type.toUpperCase()}] ★${m.importance}  ${m.content}`]
@@ -128,4 +138,15 @@ export async function startMcpServer(): Promise<void> {
 
   const transport = new StdioServerTransport()
   await server.connect(transport)
+}
+
+function timeAgo(date: Date): string {
+  const sec = Math.floor((Date.now() - date.getTime()) / 1000)
+  if (sec < 60) return 'just now'
+  const min = Math.floor(sec / 60)
+  if (min < 60) return `${min}m ago`
+  const hrs = Math.floor(min / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  const days = Math.floor(hrs / 24)
+  return `${days}d ago`
 }

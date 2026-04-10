@@ -6,6 +6,7 @@ import { recallCommand } from './commands/recall.js'
 import { statusCommand } from './commands/status.js'
 import { forgetCommand } from './commands/forget.js'
 import { initCommand } from './commands/init.js'
+import { promptCommand } from './commands/prompt.js'
 import { startMcpServer } from './mcp/server.js'
 
 const program = new Command()
@@ -15,7 +16,7 @@ console.log()
 program
   .name('mnemo')
   .description(chalk.cyan('mnemo') + chalk.dim(' — persistent memory for AI coding tools'))
-  .version('0.2.1')
+  .version('0.2.2')
 
 program
   .command('init')
@@ -41,6 +42,11 @@ program
   .command('forget <id>')
   .description('delete a memory by ID')
   .action(forgetCommand)
+
+program
+  .command('prompt')
+  .description('output shell prompt indicator (for PS1 integration)')
+  .action(promptCommand)
 
 program
   .command('mcp')

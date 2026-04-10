@@ -8,6 +8,7 @@ import { createSession, endSession, saveMemory, updateEmbedding } from '../db/st
 import { extractMemories } from './extractor.js'
 import { embed } from './embeddings.js'
 import { getGitContext, getProjectName } from './git.js'
+import { writePid, removePid } from '../utils/pid.js'
 
 const AI_SESSION_DIR = join(homedir(), '.claude', 'projects')
 const CURSOR_LOG_DIR = join(homedir(), '.cursor', 'logs')
@@ -47,12 +48,15 @@ export class SessionWatcher {
 
     this.watcher.on('change', (p: string) => this.onFileChange(p))
     this.watcher.on('add', (p: string) => this.onFileChange(p))
+
+    writePid()
   }
 
   async stop(): Promise<void> {
     if (this.flushTimer) clearTimeout(this.flushTimer)
     await this.flush()
     if (this.watcher) await this.watcher.close()
+    removePid()
     endSession(this.db, this.sessionId, this.memoriesExtracted)
   }
 
